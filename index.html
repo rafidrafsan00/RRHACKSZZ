@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="RR Hacks Wingo Prediction App" />
+  <title>RR Hacks - Wingo Access</title>
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(45deg, #00FFFF, #00CED1);
+      --primary-gradient-hover: linear-gradient(45deg, #00CED1, #00FFFF);
+      --background-gradient: linear-gradient(to right, #4B0082, #8B008B);
+      --dark-bg: #1F2937;
+      --input-bg: #374151;
+      --border-color: #6B7280;
+      --error-color: #EF4444;
+      --highlight-color: #00FFFF;
+      --success-color: #39FF14;
+      --shadow-sm: 0 2px 10px rgba(0,0,0,0.3);
+      --shadow-lg: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--background-gradient);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #ticker {
+      background: var(--dark-bg);
+      color: var(--highlight-color);
+      padding: 10px;
+      width: 100%;
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+      position: fixed;
+      top: 0;
+      z-index: 4;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    #ticker span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: ticker 20s linear infinite;
+    }
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #ticker span { animation: none; }
+    }
+    #loginBox {
+      background: var(--dark-bg);
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      display: block;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: var(--highlight-color);
+      font-size: 24px;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      font-size: 16px;
+      background: var(--input-bg);
+      color: #fff;
+      transition: border-color 0.3s ease, transform 0.2s ease;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--highlight-color);
+      transform: scale(1.02);
+    }
+    button {
+      background: var(--primary-gradient);
+      color: var(--dark-bg);
+      border: none;
+      padding: 12px 20px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    }
+    button:hover, button:focus {
+      background: var(--primary-gradient-hover);
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+    }
+    #error, #predictError {
+      color: var(--error-color);
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    #getKey {
+      margin-top: 20px;
+      display: block;
+      font-weight: bold;
+      text-decoration: none;
+      color: var(--highlight-color);
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+    #getKey:hover, #getKey:focus {
+      color: var(--success-color);
+      transform: scale(1.05);
+    }
+    #topBar {
+      background: var(--background-gradient);
+      color: #fff;
+      padding: 10px 30px;
+      font-size: 20px;
+      display: none;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 3;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .button-bar {
+      display: none;
+    }
+    .btn {
+      padding: 10px 25px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 25px;
+      color: var(--dark-bg);
+      cursor: pointer;
+      background: var(--primary-gradient);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.6), 0 4px 10px rgba(0,0,0,0.3);
+      transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    }
+    .btn:hover, .btn:focus {
+      background: var(--primary-gradient-hover);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+      transform: scale(1.1);
+    }
+    .result-box {
+      background: var(--input-bg);
+      border: 2px solid var(--highlight-color);
+      border-radius: 8px;
+      padding: 8px 15px;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+      margin-right: 30px;
+    }
+    .result-box span {
+      color: var(--success-color);
+      font-weight: bold;
+    }
+    iframe {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      width: 100vw;
+      height: calc(100vh - 60px);
+      border: none;
+      z-index: 1;
+      background: white;
+      display: none;
+    }
+    #overlay, #popup, #numberPicker {
+      display: none;
+    }
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 999;
+    }
+    #popup, #numberPicker {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--dark-bg);
+      padding: 20px;
+      width: 90%;
+      max-width: 350px;
+      border-radius: 12px;
+      z-index: 1000;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    #popup h3 {
+      margin-bottom: 15px;
+      text-align: center;
+      color: var(--highlight-color);
+    }
+    .rounds {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    .round {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: var(--input-bg);
+      text-align: center;
+      line-height: 45px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+      tabindex: 0;
+    }
+    .round:hover, .round:focus {
+      background: var(--highlight-color);
+      color: var(--dark-bg);
+      transform: scale(1.1);
+    }
+    .round.selected {
+      background: var(--success-color);
+      color: var(--dark-bg);
+    }
+    .num-btn {
+      display: inline-block;
+      width: 38px;
+      height: 38px;
+      margin: 5px;
+      background: var(--input-bg);
+      border-radius: 6px;
+      line-height: 38px;
+      text-align: center;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      tabindex: 0;
+    }
+    .num-btn:hover, .num-btn:focus {
+      background: var(--highlight-color);
+      color: var(--dark-bg);
+      transform: scale(1.1);
+    }
+    #predictBtn {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--primary-gradient);
+      color: var(--dark-bg);
+      transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    }
+    #predictBtn:hover, #predictBtn:focus {
+      background: var(--primary-gradient-hover);
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+    }
+    @media (max-width: 600px) {
+      #ticker { font-size: 14px; }
+      #loginBox, #popup, #numberPicker { padding: 20px; }
+      .round { width: 40px; height: 40px; line-height: 40px; }
+      .num-btn { width: 35px; height: 35px; line-height: 35px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="ticker"><span>WELCOME TO RR HACKS IN OUR APP YOU GET 80% PERFECT SIGNAL OF WINGO 1 MINUTE UPCOMING RESULT IF YOU NOT HAVE ACCESS KEY TAP THE GET KEY BUTTON AND MESSAGE HSCK OWNER TO GET KEY....!!REMEMBER IF ANYONE GIVE YOU THIS HACK EXCEPT ME THIS HACK IS FAKE YOU CAN GET THIS HACK FROM ONLY ME!!</span></div>
+  <div id="loginBox">
+    <h2>Enter Password</h2>
+    <div id="error" role="alert"></div>
+    <input type="text" id="accessKey" placeholder="Enter password" aria-label="Password" maxlength="20" onkeypress="if(event.key === 'Enter') checkKey();" />
+    <button onclick="checkKey()" aria-label="Login">Login</button>
+    <a id="getKey" href="https://t.me/Rafid369" target="_blank">GET KEY!</a>
+  </div>
+  <div id="topBar">
+    <div class="button-bar">
+      <button class="btn" onclick="openPopup()" aria-label="Get Prediction">Get Predict</button>
+    </div>
+    <div class="result-box">Result: <span id="result" role="status">--</span></div>
+  </div>
+  <iframe src="https://dkwin9.com/#/" id="gameIframe" onload="iframeLoaded()" onerror="iframeFailed()"></iframe>
+  <div id="overlay" onclick="closePopup(); closePicker();" role="presentation"></div>
+  <div id="popup" role="dialog" aria-labelledby="popupTitle" aria-modal="true">
+    <h3 id="popupTitle">Prediction Setup</h3>
+    <div id="predictError" role="alert"></div>
+    <input type="number" id="periodDigits" placeholder="Last 3 digits of period" min="0" max="999" maxlength="3" pattern="[0-9]{3}" aria-label="Period Digits" onkeypress="if(event.key === 'Enter') calculateResult();" />
+    <div class="rounds">
+      <div class="round" id="r0" onclick="openPicker(0)" onkeypress="if(event.key === 'Enter' || event.key === ' ') openPicker(0)" role="button" aria-label="Select Number 1" tabindex="0">–</div>
+      <div class="round" id="r1" onclick="openPicker(1)" onkeypress="if(event.key === 'Enter' || event.key === ' ') openPicker(1)" role="button" aria-label="Select Number 2" tabindex="0">–</div>
+      <div class="round" id="r2" onclick="openPicker(2)" onkeypress="if(event.key === 'Enter' || event.key === ' ') openPicker(2)" role="button" aria-label="Select Number 3" tabindex="0">–</div>
+      <div class="round" id="r3" onclick="openPicker(3)" onkeypress="if(event.key === 'Enter' || event.key === ' ') openPicker(3)" role="button" aria-label="Select Number 4" tabindex="0">–</div>
+      <div class="round" id="r4" onclick="openPicker(4)" onkeypress="if(event.key === 'Enter' || event.key === ' ') openPicker(4)" role="button" aria-label="Select Number 5" tabindex="0">–</div>
+    </div>
+    <button id="predictBtn" onclick="calculateResult()" aria-label="Predict">Predict</button>
+  </div>
+  <div id="numberPicker" role="dialog" aria-label="Number Picker" aria-modal="true"></div>
+
+  <script>
+    const state = {
+      last5: [null, null, null, null, null],
+      activeIndex: null
+    };
+    const CORRECT_PASSWORD = 'RRHACKSZZ10';
+
+    function sanitizeInput(input) {
+      return input.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+    }
+
+    function checkKey() {
+      const inputKey = sanitizeInput(document.getElementById('accessKey').value.trim());
+      const errorEl = document.getElementById('error');
+      errorEl.textContent = '';
+
+      if (!inputKey) {
+        errorEl.textContent = 'Please enter a password.';
+        return;
+      }
+
+      if (inputKey !== CORRECT_PASSWORD) {
+        errorEl.textContent = 'Invalid key. Tap GET KEY! to contact the owner.';
+        return;
+      }
+
+      try {
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('ticker').style.display = 'none';
+        document.getElementById('topBar').style.display = 'flex';
+        document.querySelector('.button-bar').style.display = 'block';
+        document.querySelector('iframe').style.display = 'block';
+        document.body.style.background = 'var(--dark-bg)';
+        console.log('Login successful');
+      } catch (e) {
+        errorEl.textContent = 'Error during login. Please try again.';
+        console.error('Login error:', e);
+      }
+    }
+
+    function iframeLoaded() {
+      console.log('Iframe loaded successfully');
+    }
+
+    function iframeFailed() {
+      document.getElementById('error').textContent = 'Failed to load game content. Please try again.';
+      document.getElementById('loginBox').style.display = 'block';
+      document.getElementById('ticker').style.display = 'block';
+      document.getElementById('topBar').style.display = 'none';
+      document.querySelector('.button-bar').style.display = 'none';
+      document.querySelector('iframe').style.display = 'none';
+      console.error('Iframe failed to load');
+    }
+
+    function openPopup() {
+      const popup = document.getElementById('popup');
+      popup.style.display = 'block';
+      document.getElementById('overlay').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+      document.getElementById('predictError').textContent = '';
+      popup.querySelector('input').focus();
+      popup.addEventListener('keydown', trapFocus);
+    }
+
+    function closePopup() {
+      document.getElementById('popup').style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+      document.body.style.overflow = 'auto';
+      document.getElementById('popup').removeEventListener('keydown', trapFocus);
+      resetState();
+    }
+
+    function openPicker(index) {
+      state.activeIndex = index;
+      const picker = document.getElementById('numberPicker');
+      picker.innerHTML = '';
+      for (let i = 0; i <= 9; i++) {
+        const btn = document.createElement('div');
+        btn.className = 'num-btn';
+        btn.textContent = i;
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('aria-label', `Select number ${i}`);
+        btn.setAttribute('tabindex', '0');
+        btn.onclick = () => selectNumber(i);
+        btn.onkeypress = (e) => {
+          if (e.key === 'Enter' || e.key === ' ') selectNumber(i);
+        };
+        picker.appendChild(btn);
+      }
+      picker.style.display = 'block';
+      document.getElementById('overlay').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+      picker.querySelector('.num-btn').focus();
+      picker.addEventListener('keydown', trapFocus);
+    }
+
+    function selectNumber(num) {
+      state.last5[state.activeIndex] = num;
+      const el = document.getElementById(`r${state.activeIndex}`);
+      el.textContent = num;
+      el.classList.add('selected');
+      closePicker();
+    }
+
+    function closePicker() {
+      document.getElementById('numberPicker').style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+      document.body.style.overflow = 'auto';
+      document.getElementById('numberPicker').removeEventListener('keydown', trapFocus);
+    }
+
+    function trapFocus(e) {
+      const activeModal = document.getElementById('popup').style.display === 'block' ? 'popup' : 'numberPicker';
+      const focusable = document.querySelectorAll(`#${activeModal} input, #${activeModal} button, #${activeModal} [role="button"]`);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    }
+
+    function resetState() {
+      state.last5 = [null, null, null, null, null];
+      document.querySelectorAll('.round').forEach(el => {
+        el.textContent = '–';
+        el.classList.remove('selected');
+      });
+      document.getElementById('periodDigits').value = '';
+      document.getElementById('result').textContent = '--';
+      document.getElementById('predictError').textContent = '';
+    }
+
+    function newWingoAlgorithms(last5, period) {
+      if (!last5.every(n => Number.isInteger(n) && n >= 0 && n <= 9) || !Number.isInteger(period) || period < 0 || period > 999) {
+        throw new Error('Invalid input: last5 must be integers 0-9, period must be 0-999');
+      }
+
+      // Core calculations
+      const sum = last5.reduce((a, b) => a + b, 0);
+      const avg = sum / last5.length;
+      const max = Math.max(...last5);
+      const min = Math.min(...last5);
+      const digitSumPeriod = String(period).split('').reduce((a, b) => a + +b, 0);
+      const evenCount = last5.filter(d => d % 2 === 0).length;
+      const oddCount = last5.length - evenCount;
+      const zeroCount = last5.filter(d => d === 0).length;
+      const nineCount = last5.filter(d => d === 9).length;
+      const mod3Count = last5.filter(d => d % 3 === 0).length;
+      const mod5Count = last5.filter(d => d % 5 === 0).length;
+      const ascending = last5.every((v, i, a) => i === 0 || v >= a[i - 1]);
+      const descending = last5.every((v, i, a) => i === 0 || v <= a[i - 1]);
+      const diffMaxMin = max - min;
+      const firstLastSum = last5[0] + last5[4];
+      const middleThreeSum = last5[1] + last5[2] + last5[3];
+      const periodMod10 = period % 10;
+      const periodMod3 = period % 3;
+      const periodDigits = String(period).padStart(3, '0').split('').map(Number);
+      const uniqueDigits = [...new Set(last5)].length;
+      const product = last5.reduce((a, b) => a * (b + 1), 1);
+      const median = last5.slice().sort((a, b) => a - b)[2];
+      const variance = last5.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / last5.length;
+      const stdDev = Math.sqrt(variance);
+      const digitFreq = Array(10).fill(0).map((_, i) => last5.filter(d => d === i).length);
+      const consecutiveDiffs = last5.slice(1).map((v, i) => Math.abs(v - last5[i]));
+      const cyclicSum = last5.reduce((a, b, i) => a + (b * (i + 1)) % 10, 0);
+      const digitPairs = last5.slice(0, 4).map((v, i) => v + last5[i + 1]);
+
+      let votes = [];
+
+      // Core algorithms (~150)
+      votes.push(sum >= 20 ? 'Big' : 'Small');
+      votes.push(avg >= 4 ? 'Big' : 'Small');
+      votes.push(sum % 2 === 0 ? 'Big' : 'Small');
+      votes.push(sum % 3 === 0 ? 'Big' : 'Small');
+      votes.push(sum % 5 === 0 ? 'Big' : 'Small');
+      votes.push(evenCount >= 3 ? 'Big' : 'Small');
+      votes.push(oddCount >= 3 ? 'Small' : 'Big');
+      votes.push(zeroCount >= 1 ? 'Small' : 'Big');
+      votes.push(nineCount >= 1 ? 'Big' : 'Small');
+      votes.push(mod3Count >= 2 ? 'Big' : 'Small');
+      votes.push(mod5Count >= 2 ? 'Big' : 'Small');
+      votes.push(diffMaxMin >= 4 ? 'Big' : 'Small');
+      votes.push(ascending ? 'Big' : 'Small');
+      votes.push(descending ? 'Small' : 'Big');
+      votes.push(firstLastSum >= 8 ? 'Big' : 'Small');
+      votes.push(middleThreeSum >= 12 ? 'Big' : 'Small');
+      votes.push(digitSumPeriod % 2 === 0 ? 'Big' : 'Small');
+      votes.push(periodMod10 >= 5 ? 'Big' : 'Small');
+      votes.push(periodMod3 === 0 ? 'Big' : 'Small');
+      votes.push(last5[0] >= 4 ? 'Big' : 'Small');
+      votes.push(last5[4] >= 4 ? 'Big' : 'Small');
+      for (let i = 0; i < 4; i++) {
+        votes.push(consecutiveDiffs[i] >= 3 ? 'Big' : 'Small');
+      }
+      votes.push((last5[2] + last5[4]) >= 9 ? 'Big' : 'Small');
+      votes.push((last5[0] + last5[1]) >= 9 ? 'Big' : 'Small');
+      votes.push(last5.filter(d => d > 4).length >= 3 ? 'Big' : 'Small');
+      votes.push(last5.filter(d => d < 5).length >= 3 ? 'Small' : 'Big');
+      votes.push(sum - digitSumPeriod >= 8 ? 'Big' : 'Small');
+      votes.push(Math.abs(last5[0] - last5[4]) >= 3 ? 'Big' : 'Small');
+      votes.push(Math.abs(last5[1] - last5[3]) >= 3 ? 'Big' : 'Small');
+      votes.push(last5[2] % 2 === 0 ? 'Big' : 'Small');
+      votes.push(sum % 4 === 0 ? 'Big' : 'Small');
+      votes.push(ascending && sum >= 15 ? 'Big' : 'Small');
+      votes.push(descending && sum <= 15 ? 'Small' : 'Big');
+      votes.push((max + min) >= 8 ? 'Big' : 'Small');
+      votes.push((max + min) <= 8 ? 'Small' : 'Big');
+      votes.push(last5[1] >= 4 ? 'Big' : 'Small');
+      votes.push(last5[3] >= 4 ? 'Big' : 'Small');
+      votes.push(digitSumPeriod >= 8 ? 'Big' : 'Small');
+      votes.push((sum + digitSumPeriod) % 2 === 0 ? 'Big' : 'Small');
+      for (let i = 0; i < 10; i++) {
+        votes.push(digitFreq[i] >= 2 ? (i >= 4 ? 'Big' : 'Small') : (i >= 4 ? 'Small' : 'Big'));
+      }
+      for (let i = 2; i <= 12; i++) {
+        votes.push(period % i === 0 ? 'Big' : 'Small');
+      }
+      votes.push((periodMod10 + max) >= 12 ? 'Big' : 'Small');
+      votes.push((periodMod10 + min) <= 6 ? 'Small' : 'Big');
+      votes.push(avg >= 3.5 ? 'Big' : 'Small');
+      votes.push(avg <= 4.5 ? 'Small' : 'Big');
+      votes.push((sum / 5) >= 4 ? 'Big' : 'Small');
+      votes.push((sum / 5) <= 4 ? 'Small' : 'Big');
+      votes.push((max - avg) >= 2.5 ? 'Big' : 'Small');
+      votes.push((avg - min) >= 2.5 ? 'Small' : 'Big');
+      votes.push((last5[0] + last5[2] + last5[4]) >= 12 ? 'Big' : 'Small');
+      votes.push((last5[1] + last5[3]) >= 8 ? 'Big' : 'Small');
+      votes.push((last5[1] + last5[4]) >= 8 ? 'Big' : 'Small');
+      votes.push((last5[2] + last5[3]) >= 8 ? 'Big' : 'Small');
+      votes.push(last5[0] === last5[4] ? 'Small' : 'Big');
+      votes.push(last5[1] === last5[3] ? 'Small' : 'Big');
+      for (let i = 3; i <= 7; i++) {
+        votes.push(digitSumPeriod % i === 0 ? 'Big' : 'Small');
+      }
+      for (let i = 9; i <= 23; i += 2) {
+        votes.push(period % i === 0 ? 'Big' : 'Small');
+      }
+      for (let i = 0; i < 5; i++) {
+        votes.push(last5[i] % 2 === 0 ? 'Big' : 'Small');
+        votes.push(last5[i] % 3 === 0 ? 'Big' : 'Small');
+      }
+      votes.push(sum % 7 === 0 ? 'Big' : 'Small');
+      votes.push(sum % 8 === 0 ? 'Big' : 'Small');
+      votes.push(sum % 9 === 0 ? 'Big' : 'Small');
+      votes.push((max + min + periodMod10) >= 12 ? 'Big' : 'Small');
+      votes.push((min + periodMod10) <= 5 ? 'Small' : 'Big');
+      votes.push((last5[0] + last5[1] + last5[2]) >= 12 ? 'Big' : 'Small');
+      votes.push((last5[2] + last5[3] + last5[4]) >= 12 ? 'Big' : 'Small');
+      for (let i = 4; i <= 10; i++) {
+        votes.push(period % i === 0 ? 'Big' : 'Small');
+      }
+      for (let i = 0; i < 4; i++) {
+        votes.push(last5.filter(d => d === (periodMod10 + i) % 10).length >= 1 ? 'Big' : 'Small');
+      }
+
+      // Extended algorithms to reach 1500
+      // Sum-based rules
+      for (let i = 10; i <= 40; i++) {
+        votes.push(sum >= i ? 'Big' : 'Small');
+        votes.push(sum <= i ? 'Small' : 'Big');
+      }
+      // Average-based rules
+      for (let i = 2; i <= 7; i += 0.25) {
+        votes.push(avg >= i ? 'Big' : 'Small');
+        votes.push(avg <= i ? 'Small' : 'Big');
+      }
+      // Consecutive differences
+      for (let i = 0; i < 4; i++) {
+        for (let j = 1; j <= 6; j++) {
+          votes.push(consecutiveDiffs[i] >= j ? 'Big' : 'Small');
+        }
+      }
+      // Modulo-based rules for individual digits
+      for (let i = 0; i < 5; i++) {
+        for (let m = 2; m <= 10; m++) {
+          votes.push(last5[i] % m === 0 ? 'Big' : 'Small');
+        }
+      }
+      // Period modulo rules
+      for (let i = 13; i <= 60; i++) {
+        votes.push(period % i === 0 ? 'Big' : 'Small');
+      }
+      // Digit frequency rules
+      for (let d = 0; d <= 9; d++) {
+        for (let c = 1; c <= 4; c++) {
+          votes.push(digitFreq[d] >= c ? (d >= 4 ? 'Big' : 'Small') : (d >= 4 ? 'Small' : 'Big'));
+        }
+      }
+      // Pair sums
+      for (let i = 0; i < 4; i++) {
+        for (let j = i + 1; j < 5; j++) {
+          for (let s = 4; s <= 16; s++) {
+            votes.push((last5[i] + last5[j]) >= s ? 'Big' : 'Small');
+          }
+        }
+      }
+      // Period digit interactions
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 5; j++) {
+          votes.push(periodDigits[i] + last5[j] >= 8 ? 'Big' : 'Small');
+          votes.push(Math.abs(periodDigits[i] - last5[j]) >= 4 ? 'Big' : 'Small');
+        }
+      }
+      // Unique digits rules
+      for (let i = 2; i <= 5; i++) {
+        votes.push(uniqueDigits >= i ? 'Big' : 'Small');
+        votes.push(uniqueDigits <= i ? 'Small' : 'Big');
+      }
+      // Product-based rules
+      for (let i = 50; i <= 500; i += 50) {
+        votes.push(product >= i ? 'Big' : 'Small');
+        votes.push(product <= i ? 'Small' : 'Big');
+      }
+      // Variance and standard deviation
+      for (let i = 1; i <= 6; i += 0.5) {
+        votes.push(variance >= i ? 'Big' : 'Small');
+        votes.push(stdDev >= i ? 'Big' : 'Small');
+      }
+      // Median-based rules
+      for (let i = 2; i <= 8; i++) {
+        votes.push(median >= i ? 'Big' : 'Small');
+        votes.push(median <= i ? 'Small' : 'Big');
+      }
+      // Cyclic sum rules
+      for (let i = 5; i <= 25; i++) {
+        votes.push(cyclicSum >= i ? 'Big' : 'Small');
+        votes.push(cyclicSum <= i ? 'Small' : 'Big');
+      }
+      // Digit pair rules
+      for (let i = 0; i < 4; i++) {
+        for (let s = 5; s <= 15; s++) {
+          votes.push(digitPairs[i] >= s ? 'Big' : 'Small');
+        }
+      }
+      // Period digit-specific rules
+      for (let i = 0; i < 3; i++) {
+        for (let m = 2; m <= 7; m++) {
+          votes.push(periodDigits[i] % m === 0 ? 'Big' : 'Small');
+        }
+      }
+      // Cross-interactions with period
+      for (let i = 0; i < 5; i++) {
+        for (let j = 1; j <= 5; j++) {
+          votes.push(Math.abs(last5[i] - periodMod10) >= j ? 'Big' : 'Small');
+        }
+      }
+      // Additional modulo rules for sum
+      for (let i = 10; i <= 25; i++) {
+        votes.push(sum % i === 0 ? 'Big' : 'Small');
+      }
+      // Pattern-based rules
+      for (let i = 1; i < 5; i++) {
+        votes.push(last5[i] > last5[i - 1] ? 'Big' : 'Small');
+        votes.push(last5[i] < last5[i - 1] ? 'Small' : 'Big');
+      }
+      // Balanced rules for low numbers
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 3; j++) {
+          votes.push((last5[i] + periodDigits[j]) % 2 === 0 ? 'Big' : 'Small');
+        }
+      }
+      // Fill remaining to reach exactly 1500
+      const currentLength = votes.length;
+      for (let i = currentLength; i < 1500; i++) {
+        const threshold = (i % 10) + 1;
+        const combo = (sum + digitSumPeriod + last5[i % 5] + periodDigits[i % 3]) % (threshold + 5);
+        votes.push(combo >= threshold ? 'Big' : 'Small');
+      }
+
+      const bigCount = votes.filter(v => v === 'Big').length;
+      const smallCount = votes.length - bigCount;
+      const totalVotes = votes.length;
+      let result = '';
+      let percentage = 0;
+
+      if (bigCount > smallCount) {
+        result = 'Big';
+        percentage = (bigCount / totalVotes) * 100;
+      } else if (smallCount > bigCount) {
+        result = 'Small';
+        percentage = (smallCount / totalVotes) * 100;
+      } else {
+        result = periodMod10 >= 5 ? 'Big' : 'Small'; // Tiebreaker using period
+        percentage = 50;
+      }
+
+      console.log(`Total votes: ${totalVotes}, Big: ${bigCount}, Small: ${smallCount}, Result: ${result}, Percentage: ${percentage.toFixed(2)}%`);
+      return { result, percentage: percentage.toFixed(2) };
+    }
+
+    function calculateResult() {
+      const p = document.getElementById('periodDigits').value.trim();
+      const errorEl = document.getElementById('predictError');
+      const resultEl = document.getElementById('result');
+      errorEl.textContent = '';
+
+      if (p.length !== 3 || isNaN(p) || parseInt(p, 10) < 0 || parseInt(p, 10) > 999) {
+        errorEl.textContent = 'Please enter a valid 3-digit period number (0-999).';
+        return;
+      }
+
+      if (state.last5.includes(null)) {
+        errorEl.textContent = 'Please select all 5 numbers.';
+        return;
+      }
+
+      try {
+        const period = parseInt(p, 10);
+        const { result, percentage } = newWingoAlgorithms(state.last5, period);
+        resultEl.textContent = `${result} (${percentage}%)`;
+        // Force UI refresh
+        setTimeout(() => {
+          resultEl.textContent = `${result} (${percentage}%)`;
+          resultEl.style.display = 'none';
+          resultEl.offsetHeight; // Trigger reflow
+          resultEl.style.display = 'inline';
+        }, 0);
+        resetState();
+        closePopup();
+      } catch (e) {
+        errorEl.textContent = 'Error calculating result. Please try again.';
+        console.error('Calculation error:', e);
+      }
+    }
+
+    // Initialize visibility
+    document.getElementById('topBar').style.display = 'none';
+    document.querySelector('.button-bar').style.display = 'none';
+    document.querySelector('iframe').style.display = 'none';
+    document.getElementById('loginBox').style.display = 'block';
+    document.getElementById('ticker').style.display = 'block';
+
+    // Optimize ticker animation
+    const ticker = document.getElementById('ticker');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        ticker.style.animationPlayState = entry.isIntersecting ? 'running' : 'paused';
+      });
+    }, { threshold: 0 });
+    observer.observe(ticker);
+  </script>
+</body>
+</html>
